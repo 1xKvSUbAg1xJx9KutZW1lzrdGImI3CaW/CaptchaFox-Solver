@@ -1,4 +1,4 @@
-[logo]: /logo.png "CaptchaFox logo"
+![logo](https://github.com/1xKvSUbAg1xJx9KutZW1lzrdGImI3CaW/CaptchaFox-Solver/blob/master/logo.png?raw=true)
 
 # CaptchaFox.com pure request solver
 A solver for CaptchaFox written in C#, see [reversing folder](Reversing/) for partially deobfuscated javascript used for working out how it works. Deobfuscation was done with [Synchrony v2.2.2](https://deobfuscate.relative.im/). This captcha provider was reversed after it came in the way between me and generating gmx.com emails.
