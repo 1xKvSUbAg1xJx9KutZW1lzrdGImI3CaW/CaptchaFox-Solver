@@ -20,5 +20,8 @@ HTTP post to /solver, `website_url` and `captcha_key` are required while `proxy_
 }
 ```
 
+## Demo server
+A demo server has been provided at https://fox.l7.lol/solver
+
 ## Updating
 Inject the [user script provided in the reversing folder](Reversing/_userscript_interceptor.js) and see the "cs" property from the output when doing a captcha, these are your heuristics.
