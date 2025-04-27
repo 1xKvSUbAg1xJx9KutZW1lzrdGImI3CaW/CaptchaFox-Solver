@@ -1,5 +1,3 @@
 ﻿namespace CaptchaFoxSolver.Exceptions;
 
-public class ConfigFetchingException : Exception
-{
-}
+public class ConfigFetchingException : Exception;

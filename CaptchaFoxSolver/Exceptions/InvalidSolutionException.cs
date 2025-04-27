@@ -1,5 +1,3 @@
 ﻿namespace CaptchaFoxSolver.Exceptions;
 
-public class InvalidSolutionException: Exception
-{
-}
+public class InvalidSolutionException: Exception;

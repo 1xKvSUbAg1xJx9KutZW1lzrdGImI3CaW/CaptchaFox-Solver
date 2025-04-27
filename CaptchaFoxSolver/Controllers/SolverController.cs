@@ -1,4 +1,5 @@
 ﻿using CaptchaFoxSolver.Entities;
+using CaptchaFoxSolver.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -14,10 +15,19 @@ public class SolverController : ControllerBase
         => _solver = solver;
 
     [HttpPost]
-    public async Task<IActionResult> SolveAsync([FromHeader] string authorization, ApiSolveRequest payload)
+    public async Task<IActionResult> SolveAsync([FromHeader] string? authorization = null, ApiSolveRequest? payload = null)
     {
-        if (authorization != Program.Config.AuthorizationToken)
-            return Unauthorized();
+        if (Program.Config.RequireAuthorization && authorization != Program.Config.AuthorizationToken)
+            throw new InvalidAuthorizationException();
+
+        if (payload == null)
+            throw new InvalidRequestException("missing request body");
+        if (string.IsNullOrEmpty(payload.WebsiteUrl))
+            throw new InvalidRequestException("missing \"website_url\" in json body");
+        if (string.IsNullOrEmpty(payload.CaptchaKey))
+            throw new InvalidRequestException("missing \"captcha_key\" in json body");
+        if(Program.Config.RequireProxies && string.IsNullOrEmpty(payload.ProxyUrl))
+            throw new InvalidRequestException("server enforces proxy requirement, include \"proxy_url\" in json body");
 
         var sw = Stopwatch.StartNew();
         if (!string.IsNullOrEmpty(payload.ProxyUrl))

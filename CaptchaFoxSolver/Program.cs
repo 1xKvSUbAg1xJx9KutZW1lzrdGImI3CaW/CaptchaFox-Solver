@@ -20,7 +20,7 @@ public class Program
 
             Config = new SolverConfig
             {
-                AuthorizationToken = Convert.ToBase64String(SHA512.HashData(Guid.NewGuid().ToByteArray())),
+                AuthorizationToken = string.Join("", RandomNumberGenerator.GetHexString(64, true).Select(x => Random.Shared.NextSingle() > .5 ? char.ToUpper(x) : x)),
                 Host = "http://*:5462",
                 Headers = new()
                 {
@@ -30,7 +30,9 @@ public class Program
                 SampleN = 50,
                 CursorStepsPerSecond = 44,
                 CursorYFrequency = 1.5f,
-                CursorYAmplitude = 5f
+                CursorYAmplitude = 5f,
+                RequireAuthorization = true,
+                RequireProxies = false
             };
             File.WriteAllText("Config.json", JsonSerializer.Serialize(Config, new JsonSerializerOptions { WriteIndented = true}));
 
@@ -44,7 +46,10 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddScoped<FoxSolver>();
-        builder.Services.AddControllers().AddJsonOptions(opts =>
+        builder.Services.AddControllers(opts =>
+        {
+            opts.Filters.Add<ExceptionReadabilityFilter>();
+        }).AddJsonOptions(opts =>
         {
             opts.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
             opts.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
@@ -53,12 +58,14 @@ public class Program
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
-
         if(app.Environment.IsProduction())
             app.UseHttpsRedirection();
 
         app.MapControllers();
+
+        app.Logger.LogWarning("Repository available at https://github.com/1xKvSUbAg1xJx9KutZW1lzrdGImI3CaW/CaptchaFox-Solver");
+        app.Logger.LogWarning("Remember to star the repository or to send a donation :)");
+        app.Logger.LogWarning("Issues about anything other than the solver will be closed" + Environment.NewLine + Environment.NewLine + Environment.NewLine);
 
         app.Run(Config.Host);
     }
