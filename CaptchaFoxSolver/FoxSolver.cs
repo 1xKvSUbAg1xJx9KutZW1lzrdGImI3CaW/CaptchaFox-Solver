@@ -58,7 +58,7 @@ public sealed class FoxSolver : IDisposable
 
         await Task.WhenAll(powSolution, imageSolution);
 
-        float solveTime = Random.Shared.NextSingle() * .75f + .65f;
+        float solveTime = Random.Shared.NextSingle() * 1.5f + 1.25f;
 
         //y first, then x
         List<int> cursorPositions = new List<int>();
@@ -82,7 +82,7 @@ public sealed class FoxSolver : IDisposable
         using var verifyResp = await _cl.PostAsync("https://api.captchafox.com/captcha/verify", new FoxStreamContent<VerifyChallengeRequest>(new VerifyChallengeRequest
         {
             HParam = hParam,
-            Heuristics = Program.Heuristics,
+            Heuristics = GetHeuristics("https://" + siteUri.Host),
             Host = siteUri.Host,
             PoWSolution = await powSolution,
             Type = taskDetails.Type,
@@ -124,12 +124,21 @@ public sealed class FoxSolver : IDisposable
         {
             Language = "en",
             HParam = hParam,
-            Heuristics = Program.Heuristics,
+            Heuristics = GetHeuristics("https://" + hostName),
             Host = hostName,
             PoWSolution = 0,
             Type = "slide"
         }));
         return (await newChallangeResp.Content.ReadFromJsonAsync<ChallengeResponse>())!;
+    }
+
+    private Dictionary<string, object> GetHeuristics(string siteUrl)
+    {
+        var cpy = Program.Heuristics.ToDictionary();
+        cpy["CF0148"] = siteUrl;
+
+
+        return cpy;
     }
 
     private async Task<string> FetchHParamAsync(Uri siteUri, string siteKey)

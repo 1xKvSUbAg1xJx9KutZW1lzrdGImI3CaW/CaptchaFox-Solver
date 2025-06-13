@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace CaptchaFoxSolver;
 
-public class FoxStreamContent<T> : HttpContent where T : class
+internal class FoxStreamContent<T> : HttpContent where T : class
 {
     private readonly byte[] _serializedData;
 
