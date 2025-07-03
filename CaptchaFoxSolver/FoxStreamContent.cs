@@ -17,6 +17,8 @@ internal class FoxStreamContent<T> : HttpContent where T : class
         using (var gzip = new GZipStream(buffer, CompressionMode.Compress, true))
             JsonSerializer.Serialize(gzip, value, options);
 
+        //File.WriteAllText("sneed.txt", JsonSerializer.Serialize(value, options));
+
         //  qT = 2 + qS.length,
         _serializedData = new byte[buffer.Length + 2];
 

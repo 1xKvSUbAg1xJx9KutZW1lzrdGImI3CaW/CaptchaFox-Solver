@@ -6,6 +6,7 @@ using System.Net;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace CaptchaFoxSolver;
 
@@ -13,10 +14,11 @@ public sealed class FoxSolver : IDisposable
 {
     private readonly HttpClientHandler _hand;
     private readonly HttpClient _cl;
+    private HeuristicGenerator _heuristics;
 
     public FoxSolver()
     {
-        _hand = new HttpClientHandler();
+        _hand = new TlsClientWrapper();
         _cl = new HttpClient(_hand);
     }
 
@@ -32,12 +34,17 @@ public sealed class FoxSolver : IDisposable
         }
     }
 
-    public async Task<string> SolveAsync(string siteUrl, string siteKey)
+    public async Task<string> SolveAsync(string siteUrl, string siteKey, string userAgent)
     {
+        //userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/" + Random.Shared.Next(134, 146) + ".0";
+
         var siteUri = new Uri(siteUrl);
 
-        _cl.DefaultRequestHeaders.Add("Referer", siteUri.GetLeftPart(UriPartial.Authority));
-        _cl.DefaultRequestHeaders.Add("Origin", siteUri.GetLeftPart(UriPartial.Authority));
+        _heuristics = new(siteUri, userAgent);
+
+        _cl.DefaultRequestHeaders.Add("Referer", siteUri.Scheme + "://" + siteUri.Host + siteUri.AbsolutePath);
+        _cl.DefaultRequestHeaders.Add("Origin", siteUri.Scheme + "://" + siteUri.Host);
+        _cl.DefaultRequestHeaders.Add("User-Agent", userAgent);
 
         foreach (var header in Program.Config.Headers)
             _cl.DefaultRequestHeaders.Add(header.Key, header.Value);
@@ -81,15 +88,15 @@ public sealed class FoxSolver : IDisposable
 
         using var verifyResp = await _cl.PostAsync("https://api.captchafox.com/captcha/verify", new FoxStreamContent<VerifyChallengeRequest>(new VerifyChallengeRequest
         {
+            SiteKey = siteKey,
+            CursorPositions = cursorPositions.TakeLast(80).ToArray(),
+            Time = MathF.Round(solveTime, 2),
+            Solution = await imageSolution,
             HParam = hParam,
-            Heuristics = GetHeuristics("https://" + siteUri.Host),
-            Host = siteUri.Host,
+            Heuristics = await _heuristics.GenerateHeuristicAsync(),
             PoWSolution = await powSolution,
             Type = taskDetails.Type,
-            Solution = await imageSolution,
-            Time = MathF.Round(solveTime, 2),
-            CursorPositions = cursorPositions.TakeLast(80).ToArray(),
-            SiteKey = siteKey
+            Host = siteUri.Host,
         }));
 
         if(!verifyResp.IsSuccessStatusCode)
@@ -124,26 +131,28 @@ public sealed class FoxSolver : IDisposable
         {
             Language = "en",
             HParam = hParam,
-            Heuristics = GetHeuristics("https://" + hostName),
+            Heuristics = await _heuristics.GenerateHeuristicAsync(),
             Host = hostName,
             PoWSolution = 0,
             Type = "slide"
         }));
+        //Console.WriteLine(await newChallangeResp.Content.ReadAsStringAsync());
         return (await newChallangeResp.Content.ReadFromJsonAsync<ChallengeResponse>())!;
     }
 
-    private Dictionary<string, object> GetHeuristics(string siteUrl)
-    {
-        var cpy = Program.Heuristics.ToDictionary();
-        cpy["CF0148"] = siteUrl;
+    //private Dictionary<string, object> GetHeuristics(string siteUrl, bool first)
+    //{
+    //    var cpy = first ? Program.HeuristicsOne.ToDictionary() : Program.HeuristicsTwo.ToDictionary();
+    //    cpy["CF0148"] = siteUrl + "/";
 
 
-        return cpy;
-    }
+    //    return cpy;
+    //}
 
     private async Task<string> FetchHParamAsync(Uri siteUri, string siteKey)
     {
-        using var getConfigResp = await _cl.GetAsync("https://api.captchafox.com/captcha/" + siteKey + "/config?site=" + siteUri.GetLeftPart(UriPartial.Authority));
+        using var getConfigResp = await _cl.GetAsync("https://api.captchafox.com/captcha/" +  siteKey + "/config?site=" + siteUri.Scheme + "://" + siteUri.Host + siteUri.AbsolutePath);
+        //Console.WriteLine(await getConfigResp.Content.ReadAsStringAsync());
         if (!getConfigResp.IsSuccessStatusCode)
             throw new ConfigFetchingException();
         var hParam = (await getConfigResp.Content.ReadFromJsonAsync<SiteKeyConfig>())!.HParam;

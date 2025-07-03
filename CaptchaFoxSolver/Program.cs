@@ -2,6 +2,7 @@ using CaptchaFoxSolver.Entities;
 using System;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace CaptchaFoxSolver;
 
@@ -9,11 +10,12 @@ public class Program
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public static SolverConfig Config;
-    public static readonly Dictionary<string, object> Heuristics = JsonSerializer.Deserialize<Dictionary<string, object>>(File.ReadAllText("Heuristics.json"))!;
+    public static SemaphoreSlim Limiter;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
+        Environment.SetEnvironmentVariable("DOTNET_SYSTEM_NET_HTTP_ENABLEACTIVITYPROPAGATION", "false");
         if (!File.Exists("Config.json"))
         {
             Console.WriteLine("Modify 'Config.json' to your liking and start the program again");
@@ -26,13 +28,14 @@ public class Program
                 {
                     { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0" }
                 },
-                ChallengeWidth = 243,
+                ChallengeWidth = 250,
                 SampleN = 50,
                 CursorStepsPerSecond = 44,
                 CursorYFrequency = 1.5f,
                 CursorYAmplitude = 5f,
                 RequireAuthorization = true,
-                RequireProxies = false
+                RequireProxies = false,
+                MaxConcurrency = 50
             };
             File.WriteAllText("Config.json", JsonSerializer.Serialize(Config, new JsonSerializerOptions { WriteIndented = true}));
 
@@ -42,6 +45,8 @@ public class Program
             Environment.Exit(0);
         }
         else Config = JsonSerializer.Deserialize<SolverConfig>(File.ReadAllText("Config.json"))!;
+
+        Limiter = new SemaphoreSlim(Config.MaxConcurrency);
 
         var builder = WebApplication.CreateBuilder(args);
 
@@ -66,6 +71,8 @@ public class Program
         app.Logger.LogWarning("Repository available at https://github.com/1xKvSUbAg1xJx9KutZW1lzrdGImI3CaW/CaptchaFox-Solver");
         app.Logger.LogWarning("Remember to star the repository or to send a donation :)");
         app.Logger.LogWarning("Issues about anything other than the solver will be closed" + Environment.NewLine + Environment.NewLine + Environment.NewLine);
+
+        app.UseStaticFiles();
 
         app.Run(Config.Host);
     }

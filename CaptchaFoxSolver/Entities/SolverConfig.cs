@@ -14,4 +14,5 @@ public class SolverConfig
     [JsonPropertyName("vcursor_steps_per_second")] public required float CursorStepsPerSecond { get; set; }
     [JsonPropertyName("vcursor_y_freq")] public required float CursorYFrequency { get; set; }
     [JsonPropertyName("vcursor_y_ampq")] public required float CursorYAmplitude { get; set; }
+    [JsonPropertyName("max_concurrency")] public required int MaxConcurrency { get; set; }
 }
