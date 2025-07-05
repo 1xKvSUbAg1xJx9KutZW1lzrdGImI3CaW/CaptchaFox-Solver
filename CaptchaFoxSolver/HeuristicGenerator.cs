@@ -68,7 +68,7 @@ public class HeuristicGenerator
         _lightTheme = Random.Shared.NextSingle() > .5;
 
         _language = _availableLanguages[Random.Shared.Next(_availableLanguages.Length)];
-        _language = "en-GB";
+        //_language = "en-GB";
 
         _coreCount = _coreCountOptions[Random.Shared.Next(_coreCountOptions.Length)];
 
