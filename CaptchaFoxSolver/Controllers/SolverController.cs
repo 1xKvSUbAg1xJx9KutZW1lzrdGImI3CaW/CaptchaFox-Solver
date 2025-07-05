@@ -33,11 +33,9 @@ public class SolverController : ControllerBase
 
         try
         {
-            InfoController.DispatchUpdate();
             var queueWait = Stopwatch.StartNew();
             await Program.Limiter.WaitAsync();
             queueWait.Stop();
-            InfoController.DispatchUpdate();
 
             var sw = Stopwatch.StartNew();
             if (!string.IsNullOrEmpty(payload.ProxyUrl))
@@ -52,6 +50,6 @@ public class SolverController : ControllerBase
                 SemaphoreTime = Math.Round(queueWait.Elapsed.TotalSeconds, 2)
             });
         }
-        finally { Program.Limiter.Release(); InfoController.DispatchUpdate(); }
+        finally { Program.Limiter.Release(); }
     }
 }
