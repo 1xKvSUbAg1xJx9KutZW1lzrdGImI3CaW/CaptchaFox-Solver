@@ -24,10 +24,6 @@ public class Program
             {
                 AuthorizationToken = string.Join("", RandomNumberGenerator.GetHexString(64, true).Select(x => Random.Shared.NextSingle() > .5 ? char.ToUpper(x) : x)),
                 Host = "http://*:5462",
-                Headers = new()
-                {
-                    { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0" }
-                },
                 ChallengeWidth = 250,
                 SampleN = 50,
                 CursorStepsPerSecond = 44,
@@ -71,8 +67,6 @@ public class Program
         app.Logger.LogWarning("Repository available at https://github.com/1xKvSUbAg1xJx9KutZW1lzrdGImI3CaW/CaptchaFox-Solver");
         app.Logger.LogWarning("Remember to star the repository or to send a donation :)");
         app.Logger.LogWarning("Issues about anything other than the solver will be closed" + Environment.NewLine + Environment.NewLine + Environment.NewLine);
-
-        app.UseStaticFiles();
 
         app.Run(Config.Host);
     }

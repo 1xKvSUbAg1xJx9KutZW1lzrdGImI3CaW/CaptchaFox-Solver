@@ -14,11 +14,11 @@ public sealed class FoxSolver : IDisposable
 {
     private readonly HttpClientHandler _hand;
     private readonly HttpClient _cl;
-    private HeuristicGenerator _heuristics;
+    private HeuristicGenerator? _heuristics;
 
     public FoxSolver()
     {
-        _hand = new TlsClientWrapper();
+        _hand = new HttpClientHandler();
         _cl = new HttpClient(_hand);
     }
 
@@ -36,8 +36,6 @@ public sealed class FoxSolver : IDisposable
 
     public async Task<string> SolveAsync(string siteUrl, string siteKey, string userAgent)
     {
-        //userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/" + Random.Shared.Next(134, 146) + ".0";
-
         var siteUri = new Uri(siteUrl);
 
         _heuristics = new(siteUri, userAgent);
@@ -45,9 +43,6 @@ public sealed class FoxSolver : IDisposable
         _cl.DefaultRequestHeaders.Add("Referer", siteUri.Scheme + "://" + siteUri.Host + siteUri.AbsolutePath);
         _cl.DefaultRequestHeaders.Add("Origin", siteUri.Scheme + "://" + siteUri.Host);
         _cl.DefaultRequestHeaders.Add("User-Agent", userAgent);
-
-        foreach (var header in Program.Config.Headers)
-            _cl.DefaultRequestHeaders.Add(header.Key, header.Value);
 
         var hParam = await FetchHParamAsync(siteUri, siteKey);
         var taskDetails = await FetchChallengeAsync(siteKey, siteUri.Host, hParam);
@@ -131,28 +126,19 @@ public sealed class FoxSolver : IDisposable
         {
             Language = "en",
             HParam = hParam,
-            Heuristics = await _heuristics.GenerateHeuristicAsync(),
+            Heuristics = await _heuristics!.GenerateHeuristicAsync(),
             Host = hostName,
             PoWSolution = 0,
             Type = "slide"
         }));
-        //Console.WriteLine(await newChallangeResp.Content.ReadAsStringAsync());
+
         return (await newChallangeResp.Content.ReadFromJsonAsync<ChallengeResponse>())!;
     }
-
-    //private Dictionary<string, object> GetHeuristics(string siteUrl, bool first)
-    //{
-    //    var cpy = first ? Program.HeuristicsOne.ToDictionary() : Program.HeuristicsTwo.ToDictionary();
-    //    cpy["CF0148"] = siteUrl + "/";
-
-
-    //    return cpy;
-    //}
 
     private async Task<string> FetchHParamAsync(Uri siteUri, string siteKey)
     {
         using var getConfigResp = await _cl.GetAsync("https://api.captchafox.com/captcha/" +  siteKey + "/config?site=" + siteUri.Scheme + "://" + siteUri.Host + siteUri.AbsolutePath);
-        //Console.WriteLine(await getConfigResp.Content.ReadAsStringAsync());
+
         if (!getConfigResp.IsSuccessStatusCode)
             throw new ConfigFetchingException();
         var hParam = (await getConfigResp.Content.ReadFromJsonAsync<SiteKeyConfig>())!.HParam;
