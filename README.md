@@ -1,10 +1,9 @@
 ![logo](https://github.com/1xKvSUbAg1xJx9KutZW1lzrdGImI3CaW/CaptchaFox-Solver/blob/master/logo.png?raw=true)
 
-## Notice 05/07/2025
-Updated so the solver works for everything again, now uses a [heuristic/fingerprint generator](CaptchaFoxSolver/HeuristicGenerator.cs). 
+## Update 13 October 2025
+Added "mam-api" support with new request parameter "mam". You can update the solver yourself with the [heuristic generator](CaptchaFoxSolver/HeuristicGenerator.cs) 
 
-~~## Notice 31/05/2025
-I am aware that some websites like mail.com currently do not work. Everything needed to fix this can be found in the [reversing folder](Reversing/), or you can pay me to fix it for you. I will only update the repository if the solver completely breaks. For contact: [t.me/vaccinate](https://t.me/Vaccinate)~~
+Questions can be sent in at [t.me/vaccinate](https://t.me/Vaccinate) or in the git issues
 
 # CaptchaFox.com pure request solver
 A solver for CaptchaFox written in C#, see [reversing folder](Reversing/) for partially deobfuscated javascript used for working out how it works. Deobfuscation was done with [Synchrony v2.2.2](https://deobfuscate.relative.im/). This captcha provider was reversed after it came in the way between me and generating gmx.com emails.
@@ -22,7 +21,8 @@ HTTP post to /solver, `website_url` and `captcha_key` are required while `proxy_
 {
   "website_url": "https://signup.gmx.com/#.1559516-header-signup1-1",
   "captcha_key": "sk_vKdD8WGlPF5FKpRDs1U4qTuu6Jv0w",
-  "proxy_url": "http://username:password@127.0.0.1:1234"
+  "proxy_url": "http://username:password@127.0.0.1:1234",
+  "mam": true
 }
 ```
 
