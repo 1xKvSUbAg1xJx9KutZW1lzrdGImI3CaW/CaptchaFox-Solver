@@ -40,7 +40,7 @@ public class SolverController : ControllerBase
             var sw = Stopwatch.StartNew();
             if (!string.IsNullOrEmpty(payload.ProxyUrl))
                 _solver.SetProxy(payload.ProxyUrl);
-            var solution = await _solver.SolveAsync(payload.WebsiteUrl, payload.CaptchaKey, payload.UserAgent);
+            var solution = await _solver.SolveAsync(payload.WebsiteUrl, payload.CaptchaKey, payload.UserAgent, payload.Mam);
             sw.Stop();
 
             return Ok(new

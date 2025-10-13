@@ -6,4 +6,5 @@ public class ApiSolveRequest
     public string? CaptchaKey { get; set; }
     public string? ProxyUrl { get; set; }
     public string? UserAgent { get; set; }
+    public bool Mam { get; set; }
 }

@@ -6,7 +6,6 @@ using System.Net;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 namespace CaptchaFoxSolver;
 
@@ -34,7 +33,7 @@ public sealed class FoxSolver : IDisposable
         }
     }
 
-    public async Task<string> SolveAsync(string siteUrl, string siteKey, string userAgent)
+    public async Task<string> SolveAsync(string siteUrl, string siteKey, string userAgent, bool mam)
     {
         var siteUri = new Uri(siteUrl);
 
@@ -44,8 +43,8 @@ public sealed class FoxSolver : IDisposable
         _cl.DefaultRequestHeaders.Add("Origin", siteUri.Scheme + "://" + siteUri.Host);
         _cl.DefaultRequestHeaders.Add("User-Agent", userAgent);
 
-        var hParam = await FetchHParamAsync(siteUri, siteKey);
-        var taskDetails = await FetchChallengeAsync(siteKey, siteUri.Host, hParam);
+        var hParam = await FetchHParamAsync(siteUri, siteKey, mam);
+        var taskDetails = await FetchChallengeAsync(siteKey, siteUri.Host, hParam, mam);
         if (taskDetails.Type != "slide")
             throw new UnimplementedTaskException($"task \"{taskDetails.Type}\" is not implemented");
 
@@ -70,9 +69,7 @@ public sealed class FoxSolver : IDisposable
         int stepCount = (int)(solveTime * Program.Config.CursorStepsPerSecond) + Random.Shared.Next(-10, 25);
         for (int i = 0; i < stepCount + 1; i++)
         {
-            Vector2 point = Vector2.Zero;
-
-            point = new Vector2(await imageSolution * (i / (float)stepCount), MathF.Sin(i / (float)stepCount * MathF.PI * Program.Config.CursorYFrequency) * Program.Config.CursorYAmplitude);
+            Vector2 point = new Vector2(await imageSolution * (i / (float)stepCount), MathF.Sin(i / (float)stepCount * MathF.PI * Program.Config.CursorYFrequency) * Program.Config.CursorYAmplitude);
 
             if(point != Vector2.Zero)
             {
@@ -81,7 +78,7 @@ public sealed class FoxSolver : IDisposable
             }
         }
 
-        using var verifyResp = await _cl.PostAsync("https://api.captchafox.com/captcha/verify", new FoxStreamContent<VerifyChallengeRequest>(new VerifyChallengeRequest
+        using var verifyResp = await _cl.PostAsync($"https://{(mam ? "mam-api" : "api")}.captchafox.com/captcha/verify", new FoxStreamContent<VerifyChallengeRequest>(new VerifyChallengeRequest
         {
             SiteKey = siteKey,
             CursorPositions = cursorPositions.TakeLast(80).ToArray(),
@@ -104,7 +101,7 @@ public sealed class FoxSolver : IDisposable
         return verificationResponse.Token!;
     }
 
-    private async Task<int> ComputeImageSolutionAsync(string challengeImageDataUri)
+    private Task<int> ComputeImageSolutionAsync(string challengeImageDataUri)
     {
         var samplePoints = new List<float>();
 
@@ -117,12 +114,12 @@ public sealed class FoxSolver : IDisposable
                 samplePoints.Add(sampleX);
         }
 
-        return (int)Math.Round(samplePoints.Sum() / samplePoints.Count() / captchaImage.Width * Program.Config.ChallengeWidth);
+        return Task.FromResult((int)Math.Round(samplePoints.Sum() / samplePoints.Count() / captchaImage.Width * Program.Config.ChallengeWidth));
     }
 
-    private async Task<ChallengeResponse> FetchChallengeAsync(string siteKey, string hostName, string hParam)
+    private async Task<ChallengeResponse> FetchChallengeAsync(string siteKey, string hostName, string hParam, bool mam)
     {
-        using var newChallangeResp = await _cl.PostAsync("https://api.captchafox.com/captcha/" + siteKey + "/challenge", new FoxStreamContent<NewChallengeRequest>(new NewChallengeRequest
+        using var newChallangeResp = await _cl.PostAsync($"https://{(mam ? "mam-api" : "api")}.captchafox.com/captcha/" + siteKey + "/challenge", new FoxStreamContent<NewChallengeRequest>(new NewChallengeRequest
         {
             Language = "en",
             HParam = hParam,
@@ -135,9 +132,9 @@ public sealed class FoxSolver : IDisposable
         return (await newChallangeResp.Content.ReadFromJsonAsync<ChallengeResponse>())!;
     }
 
-    private async Task<string> FetchHParamAsync(Uri siteUri, string siteKey)
+    private async Task<string> FetchHParamAsync(Uri siteUri, string siteKey, bool mam)
     {
-        using var getConfigResp = await _cl.GetAsync("https://api.captchafox.com/captcha/" +  siteKey + "/config?site=" + siteUri.Scheme + "://" + siteUri.Host + siteUri.AbsolutePath);
+        using var getConfigResp = await _cl.GetAsync($"https://{(mam ? "mam-api" : "api")}.captchafox.com/captcha/" +  siteKey + "/config?site=" + siteUri.Scheme + "://" + siteUri.Host + siteUri.AbsolutePath);
 
         if (!getConfigResp.IsSuccessStatusCode)
             throw new ConfigFetchingException();

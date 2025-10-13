@@ -1,8 +1,6 @@
 using CaptchaFoxSolver.Entities;
-using System;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace CaptchaFoxSolver;
 
@@ -13,7 +11,7 @@ public class Program
     public static SemaphoreSlim Limiter;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
-    public static async Task Main(string[] args)
+    public static Task Main(string[] args)
     {
         Environment.SetEnvironmentVariable("DOTNET_SYSTEM_NET_HTTP_ENABLEACTIVITYPROPAGATION", "false");
         if (!File.Exists("Config.json"))
@@ -69,5 +67,6 @@ public class Program
         app.Logger.LogWarning("Issues about anything other than the solver will be closed" + Environment.NewLine + Environment.NewLine + Environment.NewLine);
 
         app.Run(Config.Host);
+        return Task.CompletedTask;
     }
 }

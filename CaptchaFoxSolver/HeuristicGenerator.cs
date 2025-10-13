@@ -1,14 +1,9 @@
-﻿using HtmlAgilityPack;
-using Microsoft.AspNetCore.Components.Web;
-using SixLabors.ImageSharp.Metadata;
-using System;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using UAParser;
+using HtmlAgilityPack;
 
 namespace CaptchaFoxSolver;
 
