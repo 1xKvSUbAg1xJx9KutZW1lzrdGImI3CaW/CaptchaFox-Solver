@@ -88,7 +88,7 @@ public class HeuristicGenerator
                 syntheticHeuristics.Add(key, method.Value.Invoke(this, null)!);
         }
 
-        File.WriteAllText("sneed.txt", JsonSerializer.Serialize(syntheticHeuristics));
+        //File.WriteAllText("sneed.txt", JsonSerializer.Serialize(syntheticHeuristics));
 
         return syntheticHeuristics;
     }
