@@ -162,7 +162,7 @@ public sealed class FoxSolver : IDisposable
                     digits = 1;
 
                 for (int i = digits - 1; i >= 0; i--)
-                    *(uint*)(workPtr + hashPrefix.Length + (digits - 1 - i)) = 48 + (uint)(depth / Math.Pow(10, i)) % 10;
+                    *(workPtr + hashPrefix.Length + (digits - 1 - i)) = (byte)(48 + (uint)(depth / Math.Pow(10, i)) % 10);
 
                 //false if destination is too small to hold the calculated hash, true otherwise.
                 if (!SHA256.TryHashData(new ReadOnlySpan<byte>(workPtr, hashPrefix.Length + digits), outputBuffer, out _))
@@ -171,7 +171,8 @@ public sealed class FoxSolver : IDisposable
                 int pos = 0;
                 for (; pos < difficulty; pos++)
                 {
-                    if ((pos % 2 == 0 ? (outputBuffer[pos / 2] >> 4) : (outputBuffer[pos / 2] & 0x0F)) != 0)
+                    // AND with 1 is equivelant to modules of 2 and bitshifting by one is division basicially
+                    if (((pos & 1) == 0 ? (outputBuffer[pos >> 1] >> 4) : (outputBuffer[pos >> 1] & 0x0F)) != 0)
                         break;
                 }
 
